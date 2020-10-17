@@ -48,9 +48,26 @@ func main() {
 			}
 		}
 	}
+
+	fmt.Println()
+	for _, theirPieces := range theirPiecesOptions {
+		fmt.Printf("Their Pieces %d\n", theirPieces)
+		for yourPieces := 2; ; yourPieces++ {
+			odds := piecesOdds(yourPieces, theirPieces)
+			if odds < .1 {
+				continue
+			}
+			yourExpectedCost, theirExpectedCost := expectedCost(yourPieces, theirPieces)
+			fmt.Printf("\tYour Pieces:%2d - Your Expected Cost: %2.2f, Their Expected Cost: %2.2f\n", yourPieces, yourExpectedCost, theirExpectedCost)
+			if odds > 0.9 {
+				break
+			}
+		}
+	}
 }
 
-type dice struct {yours, them int}
+type dice struct{ yours, them int }
+
 var oddsMemo = make(map[dice]map[RollOutcome]float64)
 
 func diceOdds(yours, theirs int) (outcomes map[RollOutcome]float64) {
@@ -129,7 +146,7 @@ func piecesOdds(you, them int) (retProb float64) {
 	themNow := min(them, 2)
 	outcomes := diceOdds(youNow, themNow)
 	for outcome, outcomeProb := range outcomes {
-		retProb += outcomeProb * piecesOdds(you-outcome.youLose, them - outcome.theyLose)
+		retProb += outcomeProb * piecesOdds(you-outcome.youLose, them-outcome.theyLose)
 	}
 	return retProb
 }
@@ -139,4 +156,31 @@ func min(x, y int) int {
 		return x
 	}
 	return y
+}
+
+type piecesCost struct {
+	yourCost, theirCost float64
+}
+
+var costMemo = make(map[pieces]piecesCost)
+
+func expectedCost(yourPieces, theirPieces int) (yourCost, theirCost float64) {
+	memoKey := pieces{yourPieces, theirPieces}
+	if cost, ok := costMemo[memoKey]; ok {
+		return cost.yourCost, cost.theirCost
+	}
+	defer func() { costMemo[memoKey] = piecesCost{yourCost, theirCost} }()
+	if yourPieces == 1 || theirPieces == 0 {
+		return 0, 0
+	}
+	yourDice := min(yourPieces-1, 3)
+	theirDice := min(theirPieces, 2)
+	outcomes := diceOdds(yourDice, theirDice)
+	for outcome, prob := range outcomes {
+		yourNextPieces, theirNextPieces := yourPieces-outcome.youLose, theirPieces-outcome.theyLose
+		yourNextCost, theirNextCost := expectedCost(yourNextPieces, theirNextPieces)
+		yourCost += prob * (float64(outcome.youLose) + yourNextCost)
+		theirCost += prob * (float64(outcome.theyLose) + theirNextCost)
+	}
+	return yourCost, theirCost
 }
