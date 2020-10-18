@@ -31,6 +31,7 @@ func writeResults(rw http.ResponseWriter) {
 		{2, 1},
 		{2, 2},
 		{3, 2},
+		{3, 1},
 	} {
 		outcomes := diceOdds(s.yours, s.theirs)
 		fmt.Fprintf(rw, "Dice You:Them %d:%d\n", s.yours, s.theirs)
