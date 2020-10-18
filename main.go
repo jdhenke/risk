@@ -74,12 +74,14 @@ func main() {
 	})))
 }
 
-type dice struct{ yours, them int }
+type diceCounts struct{ yourPieces, theirPieces int }
 
-var oddsMemo = make(map[dice]map[rollOutcome]float64)
+type rollOutcome struct{ youLose, theyLose int }
+
+var oddsMemo = make(map[diceCounts]map[rollOutcome]float64)
 
 func diceOdds(yours, theirs int) (outcomes map[rollOutcome]float64) {
-	memoKey := dice{yours, theirs}
+	memoKey := diceCounts{yours, theirs}
 	if outcomes, ok := oddsMemo[memoKey]; ok {
 		return outcomes
 	}
@@ -98,7 +100,6 @@ func diceOdds(yours, theirs int) (outcomes map[rollOutcome]float64) {
 	for outcome, count := range outcomesCount {
 		outcomes[outcome] = float64(count) / float64(total)
 	}
-
 	return outcomes
 }
 
@@ -116,10 +117,6 @@ func allRolls(dice int) [][]int {
 	return out
 }
 
-type rollOutcome struct {
-	youLose, theyLose int
-}
-
 func singleRollOutcome(yourRoll, theirRoll []int) rollOutcome {
 	sort.Sort(sort.Reverse(sort.IntSlice(yourRoll)))
 	sort.Sort(sort.Reverse(sort.IntSlice(theirRoll)))
@@ -134,35 +131,33 @@ func singleRollOutcome(yourRoll, theirRoll []int) rollOutcome {
 	return out
 }
 
-type piecesCount struct{ you, them int }
+type piecesCounts struct{ you, them int }
 
-var warOddsMemo = make(map[piecesCount]map[warOutcome]float64)
+var warOddsMemo = make(map[piecesCounts]map[warOutcome]float64)
 
-type warOutcome struct {
-	youLose, theyLose int
-}
+type warOutcome struct{ youLose, theyLose int }
 
-func warOdds(yourPieces, theirPieces int) (piecesCosts map[warOutcome]float64) {
-	memoKey := piecesCount{yourPieces, theirPieces}
+func warOdds(yourPieces, theirPieces int) (warOutcomeProbs map[warOutcome]float64) {
+	memoKey := piecesCounts{yourPieces, theirPieces}
 	if ans, ok := warOddsMemo[memoKey]; ok {
 		return ans
 	}
-	defer func() { warOddsMemo[memoKey] = piecesCosts }()
+	defer func() { warOddsMemo[memoKey] = warOutcomeProbs }()
 	if yourPieces == 1 || theirPieces == 0 {
 		return map[warOutcome]float64{{0, 0}: 1}
 	}
 	yourDice := min(yourPieces-1, 3)
 	theirDice := min(theirPieces, 2)
 	rollOutcomes := diceOdds(yourDice, theirDice)
-	piecesCosts = make(map[warOutcome]float64)
+	warOutcomeProbs = make(map[warOutcome]float64)
 	for rollOutcome, prob := range rollOutcomes {
 		yourNextPieces, theirNextPieces := yourPieces-rollOutcome.youLose, theirPieces-rollOutcome.theyLose
 		subWarOdds := warOdds(yourNextPieces, theirNextPieces)
-		for subPiecesCostCount, subProb := range subWarOdds {
-			piecesCosts[warOutcome{rollOutcome.youLose + subPiecesCostCount.youLose, rollOutcome.theyLose + subPiecesCostCount.theyLose}] += prob * subProb
+		for subWarOutcome, subWarProb := range subWarOdds {
+			warOutcomeProbs[warOutcome{rollOutcome.youLose + subWarOutcome.youLose, rollOutcome.theyLose + subWarOutcome.theyLose}] += prob * subWarProb
 		}
 	}
-	return piecesCosts
+	return warOutcomeProbs
 }
 
 func min(x, y int) int {
