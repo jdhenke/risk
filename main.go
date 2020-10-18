@@ -9,69 +9,80 @@ import (
 
 func main() {
 	panic(http.ListenAndServe(":"+os.Getenv("PORT"), http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(rw, "DICE OUTCOMES")
-		fmt.Fprintln(rw)
-		for _, s := range []struct {
-			yours, theirs int
-		}{
-			{1, 2},
-			{1, 1},
-			{2, 1},
-			{2, 2},
-			{3, 2},
-		} {
-			outcomes := diceOdds(s.yours, s.theirs)
-			fmt.Fprintf(rw, "Dice You:Them %d:%d\n", s.yours, s.theirs)
-			var keys []rollOutcome
-			for key := range outcomes {
-				keys = append(keys, key)
-			}
-			sort.Slice(keys, func(i, j int) bool {
-				return keys[i].youLose > keys[j].youLose
-			})
-			for _, outcome := range keys {
-				fmt.Fprintf(
-					rw,
-					"\t%02.2f%%: You Lose: %d, They Lose: %d\n",
-					100*outcomes[outcome],
-					outcome.youLose,
-					outcome.theyLose,
-				)
-			}
-		}
-		fmt.Fprintln(rw)
-		fmt.Fprintln(rw, "WAR OUTCOMES")
-		fmt.Fprintln(rw)
-		theirPiecesOptions := []int{1, 2, 3, 4, 5, 10, 20, 30}
-		for _, theirPieces := range theirPiecesOptions {
-			fmt.Fprintf(rw, "Their Pieces %d\n", theirPieces)
-			for yourPieces := 2; ; yourPieces++ {
-				odds := warWinProb(yourPieces, theirPieces)
-				if odds < .1 {
-					continue
-				}
-				yourExpectedCost, theirExpectedCost := expectedCost(yourPieces, theirPieces)
-				yourLowerCost, yourUpperCost, yourCostWindow := yourCostIntervals(yourPieces, theirPieces, 0.33, .66)
-				theirLowerCost, theirUpperCost, theirCostWindow := theirCostInterval(yourPieces, theirPieces, 0.33, 0.66)
-				fmt.Fprintf(
-					rw,
-					"\tYour Pieces:%02d - %02.2f%% You Win, Your E[cost]: %02.2f, Your Cost Interval: [%02d-%02d] (%02.2f%%), Their E[cost]: %02.2f, Their Cost Interval: [%02d,%02d] (%02.2f%%)\n ",
-					yourPieces, 100*odds,
-					yourExpectedCost,
-					yourLowerCost,
-					yourUpperCost,
-					yourCostWindow*100,
-					theirExpectedCost,
-					theirLowerCost,
-					theirUpperCost,
-					theirCostWindow*100,
-				)
-				if odds > 0.9 {
-					break
-				}
-			}
-		}
+		fmt.Fprintf(rw, `<html>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<body>
+<a href="https://github.com/jdhenke/risk">Code</a>
+<pre>
+`)
+		writeResults(rw)
+		fmt.Fprintf(rw, "</pre></body></html>")
 	})))
+}
+
+func writeResults(rw http.ResponseWriter) {
+	fmt.Fprintln(rw, "DICE OUTCOMES")
+	fmt.Fprintln(rw)
+	for _, s := range []struct {
+		yours, theirs int
+	}{
+		{1, 2},
+		{1, 1},
+		{2, 1},
+		{2, 2},
+		{3, 2},
+	} {
+		outcomes := diceOdds(s.yours, s.theirs)
+		fmt.Fprintf(rw, "Dice You:Them %d:%d\n", s.yours, s.theirs)
+		var keys []rollOutcome
+		for key := range outcomes {
+			keys = append(keys, key)
+		}
+		sort.Slice(keys, func(i, j int) bool {
+			return keys[i].youLose > keys[j].youLose
+		})
+		for _, outcome := range keys {
+			fmt.Fprintf(
+				rw,
+				"\t%02.2f%%: You Lose: %d, They Lose: %d\n",
+				100*outcomes[outcome],
+				outcome.youLose,
+				outcome.theyLose,
+			)
+		}
+	}
+	fmt.Fprintln(rw)
+	fmt.Fprintln(rw, "WAR OUTCOMES")
+	fmt.Fprintln(rw)
+	theirPiecesOptions := []int{1, 2, 3, 4, 5, 10, 20, 30}
+	for _, theirPieces := range theirPiecesOptions {
+		fmt.Fprintf(rw, "Their Pieces %d\n", theirPieces)
+		for yourPieces := 2; ; yourPieces++ {
+			odds := warWinProb(yourPieces, theirPieces)
+			if odds < .1 {
+				continue
+			}
+			yourExpectedCost, theirExpectedCost := expectedCost(yourPieces, theirPieces)
+			yourLowerCost, yourUpperCost, yourCostWindow := yourCostIntervals(yourPieces, theirPieces, 0.33, .66)
+			theirLowerCost, theirUpperCost, theirCostWindow := theirCostInterval(yourPieces, theirPieces, 0.33, 0.66)
+			fmt.Fprintf(
+				rw,
+				"\tYour Pieces:%02d - %02.2f%% You Win, Your E[cost]: %02.2f, Your Cost Interval: [%02d-%02d] (%02.2f%%), Their E[cost]: %02.2f, Their Cost Interval: [%02d,%02d] (%02.2f%%)\n ",
+				yourPieces, 100*odds,
+				yourExpectedCost,
+				yourLowerCost,
+				yourUpperCost,
+				yourCostWindow*100,
+				theirExpectedCost,
+				theirLowerCost,
+				theirUpperCost,
+				theirCostWindow*100,
+			)
+			if odds > 0.9 {
+				break
+			}
+		}
+	}
 }
 
 type diceCounts struct{ yourPieces, theirPieces int }
