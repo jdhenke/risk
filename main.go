@@ -6,6 +6,8 @@ import (
 )
 
 func main() {
+	fmt.Println("DICE OUTCOMES")
+	fmt.Println()
 	for _, s := range []struct {
 		yours, theirs int
 	}{
@@ -34,6 +36,8 @@ func main() {
 		}
 	}
 	fmt.Println()
+	fmt.Println("WAR OUTCOMES")
+	fmt.Println()
 	theirPiecesOptions := []int{1, 2, 3, 4, 5, 10, 20, 30}
 	for _, theirPieces := range theirPiecesOptions {
 		fmt.Printf("Their Pieces %d\n", theirPieces)
@@ -42,40 +46,21 @@ func main() {
 			if odds < .1 {
 				continue
 			}
-			fmt.Printf("\tYour Pieces:%2d - %02.2f%% you win\n", yourPieces, 100*odds)
-			if odds > 0.9 {
-				break
-			}
-		}
-	}
-
-	fmt.Println()
-	for _, theirPieces := range theirPiecesOptions {
-		fmt.Printf("Their Pieces %d\n", theirPieces)
-		for yourPieces := 2; ; yourPieces++ {
-			odds := warWinProb(yourPieces, theirPieces)
-			if odds < .1 {
-				continue
-			}
 			yourExpectedCost, theirExpectedCost := expectedCost(yourPieces, theirPieces)
-			fmt.Printf("\tYour Pieces:%2d - Your Expected Cost: %2.2f, Their Expected Cost: %2.2f\n", yourPieces, yourExpectedCost, theirExpectedCost)
-			if odds > 0.9 {
-				break
-			}
-		}
-	}
-
-	fmt.Println()
-	for _, theirPieces := range theirPiecesOptions {
-		fmt.Printf("Their Pieces %d\n", theirPieces)
-		for yourPieces := 2; ; yourPieces++ {
-			odds := warWinProb(yourPieces, theirPieces)
-			if odds < .1 {
-				continue
-			}
 			yourLowerCost, yourUpperCost, yourCostWindow := yourCostIntervals(yourPieces, theirPieces, 0.33, .66)
 			theirLowerCost, theirUpperCost, theirCostWindow := theirCostInterval(yourPieces, theirPieces, 0.33, 0.66)
-			fmt.Printf("\tYour Pieces:%2d - Cost Intervals (Inclusive) - Yours [%2d, %2d] (%2.2f%%) - Theirs [%2d, %2d] (%2.2f)\n", yourPieces, yourLowerCost, yourUpperCost, yourCostWindow, theirLowerCost, theirUpperCost, theirCostWindow)
+			fmt.Printf(
+				"\tYour Pieces:%2d - %02.2f%% You Win, Your E[cost] %2.2f, Your Cost Interval: [%d-%d] (%2.2f%%), Their E[cost]: %2.2f, Their Cost Interval: [%d,%d] (%2.2f%%)\n ",
+				yourPieces, 100*odds,
+				yourExpectedCost,
+				yourLowerCost,
+				yourUpperCost,
+				yourCostWindow*100,
+				theirExpectedCost,
+				theirLowerCost,
+				theirUpperCost,
+				theirCostWindow*100,
+			)
 			if odds > 0.9 {
 				break
 			}
