@@ -55,7 +55,7 @@ func main() {
 				theirLowerCost, theirUpperCost, theirCostWindow := theirCostInterval(yourPieces, theirPieces, 0.33, 0.66)
 				fmt.Fprintf(
 					rw,
-					"\tYour Pieces:%02d - %02.2f%% You Win, Your: E[cost] %02.2f, Your Cost Interval: [%02d-%02d] (%02.2f%%), Their E[cost]: %02.2f, Their Cost Interval: [%02d,%02d] (%02.2f%%)\n ",
+					"\tYour Pieces:%02d - %02.2f%% You Win, Your E[cost]: %02.2f, Your Cost Interval: [%02d-%02d] (%02.2f%%), Their E[cost]: %02.2f, Their Cost Interval: [%02d,%02d] (%02.2f%%)\n ",
 					yourPieces, 100*odds,
 					yourExpectedCost,
 					yourLowerCost,
