@@ -73,8 +73,9 @@ func main() {
 			if odds < .1 {
 				continue
 			}
-			lowerCost, upperCost, actualWindow := yourCostIntervals(yourPieces, theirPieces, 0.33, .66)
-			fmt.Printf("\tYour Pieces:%2d - Your Cost Interval - You [%2d, %2d] (%2.2f%%)\n", yourPieces, lowerCost, upperCost, actualWindow)
+			yourLowerCost, yourUpperCost, yourCostWindow := yourCostIntervals(yourPieces, theirPieces, 0.33, .66)
+			theirLowerCost, theirUpperCost, theirCostWindow := theirCostInterval(yourPieces, theirPieces, 0.33, 0.66)
+			fmt.Printf("\tYour Pieces:%2d - Cost Intervals (Inclusive) - Yours [%2d, %2d] (%2.2f%%) - Theirs [%2d, %2d] (%2.2f)\n", yourPieces, yourLowerCost, yourUpperCost, yourCostWindow, theirLowerCost, theirUpperCost, theirCostWindow)
 			if odds > 0.9 {
 				break
 			}
@@ -201,13 +202,26 @@ func expectedCost(yourPieces, theirPieces int) (yourCost, theirCost float64) {
 	return yourCost, theirCost
 }
 
+func theirCostInterval(yourPieces, theirPieces int, lower, upper float64) (lowerCost, upperCost int, window float64) {
+	return costInterval(yourPieces, theirPieces, lower, upper, func(outcome warOutcome) int {
+		return outcome.theyLose
+	})
+}
+
 func yourCostIntervals(yourPieces, theirPieces int, lower, upper float64) (lowerCost, upperCost int, window float64) {
+	return costInterval(yourPieces, theirPieces, lower, upper, func(outcome warOutcome) int {
+		return outcome.youLose
+	})
+}
+
+func costInterval(yourPieces, theirPieces int, lower, upper float64, getCost func(outcome warOutcome) int) (lowerCost, upperCost int, window float64) {
 	warOutcomes := warOdds(yourPieces, theirPieces)
 	costProbs := make(map[int]float64)
 	var costOptions []int
 	for outcome, prob := range warOutcomes {
-		costProbs[outcome.youLose] += prob
-		costOptions = append(costOptions, outcome.youLose)
+		cost := getCost(outcome)
+		costProbs[cost] += prob
+		costOptions = append(costOptions, cost)
 	}
 	sort.Ints(costOptions)
 	probsSoFar := float64(0)
